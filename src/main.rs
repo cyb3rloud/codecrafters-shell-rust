@@ -1,47 +1,54 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
+use std::process::Command;
 
 
 
-fn handle_echo(args: &[&str]) {
-             //now, we join the arguments back together with spaces and print them
-             println!("{}", args.join(" "));   
-            }
-fn handle_type(args: &[&str]){
-    if args.is_empty() {
-        println!("type is a shell builtin");
-        return; //Handles the case where someone just types "type"
-    }
-    let target = args[0];
-    //now let's check if target is one of our built in commands
-    match target {
-        "exit" | "echo" | "type" | "bye" => {
-            println!("{} is a shell builtin", target)
-        }
+fn find_in_path(target: &str) -> Option<String> {
+    if let Ok(path_env) = std::env::var("PATH") {
+        for directory in path_env.split(':') {
+            let mut path = std::path::PathBuf::from(directory);
+            path.push(target);
 
-        _ => {
-        if let Ok(path_env) = std::env::var("PATH"){
-            for directory in path_env.split(':'){
-               let mut path = std::path::PathBuf::from(directory);
-                path.push(target);
-               
-                 if path.exists() {
-                    if let Ok(metadata) = std::fs::metadata(&path){
-                        let mode = metadata.permissions().mode();
-                        if mode & 0o111 != 0 {
-                            println! ("{} is {}",target, path.display());
-                            return;
-                        }
+            if path.exists() {
+                if let Ok(metadata) = std::fs::metadata(&path) {
+                    if metadata.permissions().mode() & 0o111 != 0 {
+                        return Some(path.to_string_lossy().into_owned());
                     }
+                }
             }
         }
-       }  
-        println!("{}: not found", target)
     }
-    }
+    None
 }
 
+// 3. Your command handlers
+fn handle_echo(args: &[&str]) {
+    println!("{}", args.join(" "));   
+}
+
+fn handle_type(args: &[&str]) {
+    if args.is_empty() {
+        println!("type is a shell builtin");
+        return;
+    }
+    let target = args[0];
+    match target {
+        "exit" | "echo" | "type" | "bye" => {
+            println!("{} is a shell builtin", target);
+        }
+        _ => {
+            if let Some(path) = find_in_path(target) {
+                println!("{} is {}", target, path);
+            } else {
+                println!("{}: not found", target);
+            }
+        }
+    }
+}
+                    
+    
 
 fn main() {
 
@@ -70,12 +77,21 @@ fn main() {
         "exit" | "bye" => break,
         "echo" => handle_echo(args),
         "type" => handle_type(args),
-        _ => println!("{}: command not found", command)
-    }
+        _ => 
+       // 2. Use 'if let' to check the Option returned by our helper
+                if let Some(path) = find_in_path(command) {
+                    // 3. Execute the program! 🚀
+                    let mut child = Command::new(path)
+                        .args(args)
+                        .spawn()
+                        .expect("failed to execute process");
 
-}
-       
-        
+                    child.wait().expect("process wasn't running");
+                } else {
+                    println!("{}: command not found", command);
+                }
+            }
+        }
     }
 
 
