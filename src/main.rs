@@ -77,12 +77,12 @@ fn main() {
         "exit" | "bye" => break,
         "echo" => handle_echo(args),
         "type" => handle_type(args),
-        _ => 
-       // 2. Use 'if let' to check the Option returned by our helper
-               if let Some(path) = find_in_path(command) {
-        // Use 'command' (the name) for the process identity
-        // But use 'path' as the actual executable to run
-        let mut child = Command::new(path) 
+      _ => {
+    if let Some(_path) = find_in_path(command) {
+        // Just use the 'command' name. 
+        // Since it's in the PATH, Command::new will find it 
+        // and Arg #0 will be exactly what the tester expects!
+        let mut child = Command::new(command) 
             .args(args)
             .spawn()
             .expect("failed to execute process");
@@ -96,4 +96,4 @@ fn main() {
     }
 
 
-    
+}  
