@@ -1,5 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
+use std::os::unix::fs::PermissionsExt;
 
 
 
@@ -26,8 +27,13 @@ fn handle_type(args: &[&str]){
                 path.push(target);
                
                  if path.exists() {
-                println!("{} is {}", target, path.display());
-                return;
+                    if let Ok(metadata) = std::fs::metadata(&path){
+                        let mode = metadata.permissions().mode();
+                        if mode & 0o111 != 0 {
+                            println! ("{} is {}",target, path.display());
+                            return;
+                        }
+                    }
             }
         }
        }  
