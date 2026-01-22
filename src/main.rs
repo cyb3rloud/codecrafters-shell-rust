@@ -79,18 +79,19 @@ fn main() {
         "type" => handle_type(args),
         _ => 
        // 2. Use 'if let' to check the Option returned by our helper
-                if let Some(path) = find_in_path(command) {
-                    // 3. Execute the program! 🚀
-                    let mut child = Command::new(path)
-                        .args(args)
-                        .spawn()
-                        .expect("failed to execute process");
+               if let Some(path) = find_in_path(command) {
+        // Use 'command' (the name) for the process identity
+        // But use 'path' as the actual executable to run
+        let mut child = Command::new(path) 
+            .args(args)
+            .spawn()
+            .expect("failed to execute process");
 
-                    child.wait().expect("process wasn't running");
-                } else {
-                    println!("{}: command not found", command);
-                }
-            }
+        child.wait().expect("process wasn't running");
+    } else {
+        println!("{}: command not found", command);
+    }
+}
         }
     }
 
