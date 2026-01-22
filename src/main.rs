@@ -3,13 +3,26 @@ use std::io::{self, Write};
 
 
 
-
-
-
 fn handle_echo(args: &[&str]) {
              //now, we join the arguments back together with spaces and print them
              println!("{}", args.join(" "));   
             }
+fn handle_type(args: &[&str]){
+    if args.is_empty() {
+        println!("type is a shell builtin");
+        return; //Handles the case where someone just types "type"
+    }
+    let target = args[0];
+    //now let's check if target is one of our built in commands
+    match target {
+        "exit" | "echo" | "type" | "bye" => {
+            println!("{} is a shell builtin", target)
+        }
+        _ => {
+            println!("{}: not found", target)
+        }
+    }
+}
 
 fn main() {
 
@@ -37,6 +50,7 @@ fn main() {
     match command {
         "exit" | "bye" => break,
         "echo" => handle_echo(args),
+        "type" => handle_type(args),
         _ => println!("{}: command not found", command)
     }
 
