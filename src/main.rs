@@ -18,11 +18,24 @@ fn handle_type(args: &[&str]){
         "exit" | "echo" | "type" | "bye" => {
             println!("{} is a shell builtin", target)
         }
+
         _ => {
-            println!("{}: not found", target)
+        if let Ok(path_env) = std::env::var("PATH"){
+            for directory in path_env.split(':'){
+               if let mut path = std::path::PathBuf::from(directory);
+                path.push(target);
+
+                 if path.exists() {
+                println!("{} is {}", target, path.display());
+                return;
+            }
         }
+       }  
+        println!("{}: not found", target)
+    }
     }
 }
+
 
 fn main() {
 
