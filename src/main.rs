@@ -34,7 +34,7 @@ fn handle_type(args: &[&str]) {
     }
     let target = args[0];
     match target {
-        "exit" | "echo" | "type" | "bye" => {
+        "exit" | "echo" | "type" | "bye" | "pwd"=> {
             println!("{} is a shell builtin", target);
         }
         _ => {
