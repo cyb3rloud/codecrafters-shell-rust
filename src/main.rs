@@ -22,8 +22,7 @@ fn find_in_path(target: &str) -> Option<String> {
     }
     None
 }
-
-// 3. Your command handlers
+//command handlers
 fn handle_echo(args: &[&str]) {
     println!("{}", args.join(" "));   
 }
