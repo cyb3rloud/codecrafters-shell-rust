@@ -73,6 +73,7 @@ fn main() {
         "echo" => handle_echo(args),
         "type" => handle_type(args),
         "pwd" => handle_pwd(),
+        "cd" => handle_cd(args),
 
         _ => {
     if let Some(_path) = find_in_path(command) {
@@ -98,5 +99,21 @@ fn main() {
 fn handle_pwd () {
     if let Ok(current_path) = std::env::current_dir() {
         println!( "{}", current_path.display());
+    }
+}
+
+//Implement cd functionality
+fn handle_cd (args: &[&str]) {
+    //Let's make sure the user actually typed a path 
+    if args.is_empty() {
+        return;
+    }
+
+    //Let's take the destination path from the arguments
+    let path = args[0];
+
+    //Attempt to chane the directory and catch any errors
+    if let Err(_) = std::env::set_current_dir(path){
+        println!("cd: {}: No such file or directory", path);
     }
 }
