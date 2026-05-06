@@ -51,11 +51,7 @@ fn handle_type(args: &[&str]) {
 
 fn main() {
 
-   
-
-
-  
-      loop {
+         loop {
         print!("$ ");
         io::stdout().flush().unwrap();
         
@@ -76,7 +72,9 @@ fn main() {
         "exit" | "bye" => break,
         "echo" => handle_echo(args),
         "type" => handle_type(args),
-      _ => {
+        "pwd" => handle_pwd(),
+
+        _ => {
     if let Some(_path) = find_in_path(command) {
         // Just use the 'command' name. 
         // Since it's in the PATH, Command::new will find it 
@@ -96,3 +94,9 @@ fn main() {
 
 
 }  
+//Implement PWD functionality 
+fn handle_pwd () {
+    if let Ok(current_path) = std::env::current_dir() {
+        println!( "{}", current_path.display());
+    }
+}
