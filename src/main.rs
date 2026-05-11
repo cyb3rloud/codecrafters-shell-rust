@@ -3,8 +3,6 @@ use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 
-
-
 fn find_in_path(target: &str) -> Option<String> {
     if let Ok(path_env) = std::env::var("PATH") {
         for directory in path_env.split(':') {
@@ -24,7 +22,7 @@ fn find_in_path(target: &str) -> Option<String> {
 }
 //command handlers
 fn handle_echo(args: &[&str]) {
-    println!("{}", args.join(" "));   
+    println!("{}", args.join(" "));
 }
 
 fn handle_type(args: &[&str]) {
@@ -34,7 +32,7 @@ fn handle_type(args: &[&str]) {
     }
     let target = args[0];
     match target {
-        "exit" | "echo" | "type" | "bye" | "pwd"=> {
+        "exit" | "echo" | "type" | "bye" | "pwd" => {
             println!("{} is a shell builtin", target);
         }
         _ => {
@@ -46,65 +44,60 @@ fn handle_type(args: &[&str]) {
         }
     }
 }
-                    
-    
 
 fn main() {
-
-         loop {
+    loop {
         print!("$ ");
         io::stdout().flush().unwrap();
-        
+
         let mut input = String::new();
 
         io::stdin().read_line(&mut input).unwrap();
         //trim the command to remove whitespace and newline characters
 
-    let parts: Vec<&str> = input.split_whitespace().collect();
-    if parts.is_empty() { continue; }
+        let parts: Vec<&str> = input.split_whitespace().collect();
+        if parts.is_empty() {
+            continue;
+        }
 
+        let command = parts[0];
+        let args = &parts[1..];
 
-    let command = parts[0];
-    let args = &parts[1..];
+        match command {
+            "exit" | "bye" => break,
+            "echo" => handle_echo(args),
+            "type" => handle_type(args),
+            "pwd" => handle_pwd(),
+            "cd" => handle_cd(args),
 
+            _ => {
+                if let Some(_path) = find_in_path(command) {
+                    // Just use the 'command' name.
+                    // Since it's in the PATH, Command::new will find it
+                    // and Arg #0 will be exactly what the tester expects!
+                    let mut child = Command::new(command)
+                        .args(args)
+                        .spawn()
+                        .expect("failed to execute process");
 
-    match command {
-        "exit" | "bye" => break,
-        "echo" => handle_echo(args),
-        "type" => handle_type(args),
-        "pwd" => handle_pwd(),
-        "cd" => handle_cd(args),
-
-        _ => {
-    if let Some(_path) = find_in_path(command) {
-        // Just use the 'command' name. 
-        // Since it's in the PATH, Command::new will find it 
-        // and Arg #0 will be exactly what the tester expects!
-        let mut child = Command::new(command) 
-            .args(args)
-            .spawn()
-            .expect("failed to execute process");
-
-        child.wait().expect("process wasn't running");
-    } else {
-        println!("{}: command not found", command);
-    }
-}
+                    child.wait().expect("process wasn't running");
+                } else {
+                    println!("{}: command not found", command);
+                }
+            }
         }
     }
-
-
-}  
-//Implement PWD functionality 
-fn handle_pwd () {
+}
+//Implement PWD functionality
+fn handle_pwd() {
     if let Ok(current_path) = std::env::current_dir() {
-        println!( "{}", current_path.display());
+        println!("{}", current_path.display());
     }
 }
 
 //Implement cd functionality
-fn handle_cd (args: &[&str]) {
-    //Let's make sure the user actually typed a path 
+fn handle_cd(args: &[&str]) {
+    //Let's make sure the user actually typed a path
     if args.is_empty() {
         return;
     }
@@ -112,8 +105,17 @@ fn handle_cd (args: &[&str]) {
     //Let's take the destination path from the arguments
     let path = args[0];
 
-    //Attempt to chane the directory and catch any errors
-    if let Err(_) = std::env::set_current_dir(path){
-        println!("cd: {}: No such file or directory", path);
+    if path == "~" {
+        // Step 1:Fetch the HOME variable safely and change directory
+        if let Ok(home_path) = std::env::var("HOME") {
+            if let Err(_) = std::env::set_current_dir(home_path) {
+                println!("cd: ~: No such file or directory");
+            }
+        }
+    } else {
+        //Attempt to chane the directory and catch any errors
+        if let Err(_) = std::env::set_current_dir(path) {
+            println!("cd: {}: No such file or directory", path);
+        }
     }
 }
