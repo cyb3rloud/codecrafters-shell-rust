@@ -113,7 +113,7 @@ fn handle_cd(args: &[&str]) {
             }
         }
     } else {
-        //Attempt to chane the directory and catch any errors
+        //Attempt to change the directory and catch any errors
         if let Err(_) = std::env::set_current_dir(path) {
             println!("cd: {}: No such file or directory", path);
         }
