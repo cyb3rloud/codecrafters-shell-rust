@@ -21,8 +21,17 @@ fn find_in_path(target: &str) -> Option<String> {
     None
 }
 //command handlers
-fn handle_echo(args: &[&str]) {
-    println!("{}", args.join(" "));
+fn handle_echo(args: &[&str], mut output_file: Option<std::fs::File>) {
+    let output_text = args.join(" ");
+    //check if we were given a file to write to
+        if let Some(mut file) = output_file {
+            //We have a file. Use writeln! to write to the text into it
+            writeln!(file, "{}", output_text).unwrap();
+            } else {
+                //No file was provided. Print the terminal normally.
+                println!("{}", output_text);
+            }
+
 }
 
 fn handle_type(args: &[&str]) {
@@ -61,27 +70,47 @@ fn main() {
         }
 
         let command = parts[0];
-        let args = &parts[1..];
+        let mut args = &parts[1..];
 
+        //1. Create an empty container for our output file
+        let mut output_file = None;
+        
+        if let Some(index) = args.iter().position(|&arg| arg == ">" || arg == "1>") {
+            // We found a redirect symbol!
+            // The target file is the very next item in the array
+            let target_file = args[index + 1];
+            //shrink the args
+            args = &args[..index];
+            //2. Create the file and put it in out container 
+            if let Ok(file) = std::fs::File::create(target_file) {
+                output_file = Some(file);
+            }
+
+        }
         match command {
             "exit" | "bye" => break,
-            "echo" => handle_echo(args),
+            "echo" => handle_echo(args, output_file),
             "type" => handle_type(args),
             "pwd" => handle_pwd(),
             "cd" => handle_cd(args),
 
             _ => {
                 if let Some(_path) = find_in_path(command) {
+                    let mut cmd = Command::new(command);
+                    cmd.args(args);
+
+                    // 2. If we caught a redirection file earlier, tell the command to use it!
+                    if let Some(file) = output_file {
+                        cmd.stdout(file);
+                    }
                     // Just use the 'command' name.
                     // Since it's in the PATH, Command::new will find it
                     // and Arg #0 will be exactly what the tester expects!
-                    let mut child = Command::new(command)
-                        .args(args)
-                        .spawn()
-                        .expect("failed to execute process");
+                    let mut child = cmd.spawn().expect("failed to execute process");
 
                     child.wait().expect("process wasn't running");
                 } else {
+                    //command not found prints to the screen ignoring the file
                     println!("{}: command not found", command);
                 }
             }
